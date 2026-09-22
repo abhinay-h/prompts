@@ -1,0 +1,68 @@
+TANSTACK _ MIGRATION
+
+# Objective: Migrate/Centralize TanStack Query for Feature: [FEATURE_NAME]
+
+You are working in the [PrepdhaSchool] repository.
+Your task is to implement/centralize TanStack Query for the feature: **[FEATURE_NAME]** across Web and Mobile.
+
+---
+
+### Target Feature Scope:
+- **Feature Name**: [FEATURE_NAME] (e.g., `exam-results`, `teacher-notes`, `labs`, `assignments`, `guardian-transport`, `shop`)
+- **Web Paths to inspect/update**: [WEB_PATHS_OR_COMPONENTS]
+- **Mobile Paths to inspect/update**: [MOBILE_PATHS_OR_COMPONENTS]
+- **Shared Directory Target**: `shared/common/[FEATURE_NAME]/`
+
+---
+
+### Strict Architecture & Design Rules:
+
+1. **Layer Structure in `shared/common/[FEATURE_NAME]/`**:
+   - `query-keys.ts`: Pure const key arrays and key factory functions with zero runtime dependencies.
+   - `query-options.ts` (or `queries.ts`): Export `queryOptions(...)` factories, query specs, retry/enabled rules, and cache invalidation helpers.
+   - `types.ts`: Domain models and query parameter types shared between platforms.
+
+2. **Clean Platform Separation (Zero Leakage)**:
+   - Shared query options MUST NOT import platform-specific dependencies:
+     ❌ No `cookies()`, Next.js server-only code (`next/headers`, `next/navigation`).
+     ❌ No `expo-secure-store`, `@react-native-async-storage`, `Linking`, `Alert`, or React Native primitives.
+     ❌ No UI side effects (no toasts, redirects, or component state).
+   - In shared query option factories, allow client-injected query functions or parameterized fetchers so Web (cookies/proxy) and Mobile (Bearer headers) can supply their platform fetcher safely if signatures differ.
+
+3. **Query Implementation Standards**:
+   - Centralize duplicate query keys and options if they exist separately on Web and Mobile.
+   - If Web or Mobile components are using manual `useEffect` + `useState` + fetch calls, migrate them to TanStack Query (`useQuery` / `useMutation`).
+   - Preserve standard cache defaults: `staleTime: 60 * 1000` (or feature-specific cadence like 30s for live tracking), `retry` filters (do not retry 4xx errors).
+   - Always define explicit `enabled` conditions to prevent invalid unscoped fetches.
+
+4. **Negative Constraints**:
+   - 🚫 DO NOT introduce TanStack Table or TanStack DB.
+   - 🚫 DO NOT modify backend Go/Node endpoints or change existing API contracts.
+   - 🚫 DO NOT break Server Component hydration or SSR prefetching on Web.
+
+---
+
+### Execution Steps:
+
+1. **Inspect & Audit**:
+   - Locate all query keys, API calls, manual `useEffect` fetches, and mutations related to `[FEATURE_NAME]` across Web, Mobile, and Shared.
+2. **Build Shared Foundation**:
+   - Create or consolidate `query-keys.ts`, `query-options.ts`, and `types.ts` under `shared/common/[FEATURE_NAME]/`.
+3. **Refactor Web**:
+   - Update Web consumers to import shared query keys/options.
+   - Replace manual `useEffect` fetches with `useQuery`.
+4. **Refactor Mobile**:
+   - Update Mobile consumers to import shared query keys/options.
+   - Replace manual `useEffect` / `useState` loading states with `useQuery` / `useMutation`.
+   - Wire pull-to-refresh to query refetching and ensure proper cache invalidation on mutations.
+5. **Verify & Test**:
+   - Run TypeScript typecheck on root and mobile (`npx tsc --noEmit` / `npm run build` or project lint).
+   - Run relevant unit tests for the feature.
+   - Ensure clean imports with no circular dependencies.
+
+---
+
+### Output Requirements:
+1. Provide a concise summary of the changes made.
+2. Show all modified/new files as clickable links.
+3. Report verification results (tests and typechecks).
